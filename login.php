@@ -21,7 +21,7 @@ if (isAuthenticated()) {
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title><?= h($APP_TITLE) ?> - Login</title>
+    <title><?= h($APP_TITLE) ?> - Acceso</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
