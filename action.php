@@ -105,12 +105,6 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     redirectHome();
 }
 
-if ($action === 'logout') {
-    logAudit($DATA_DIR, 'logout');
-    logoutUser();
-    redirectHome();
-}
-
 if ($action === 'sharedownload') {
     $token = (string)($_GET['s'] ?? '');
     $share = getValidShare($DATA_DIR, $token);
@@ -142,6 +136,12 @@ if ($action === 'sharedownload') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireAuth();
     requireCsrf();
+}
+
+if ($action === 'logout' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    logAudit($DATA_DIR, 'logout');
+    logoutUser();
+    redirectHome();
 }
 
 if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -207,7 +207,7 @@ if ($action === 'rename' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $oldAbs = resolvePath($ROOT_DIR, $oldRel);
     $newAbs = buildPathInRoot($ROOT_DIR, trim(dirname($oldRel) . '/' . $newName, './'));
 
-    if ($newAbs && file_exists($oldAbs) && !file_exists($newAbs) && rename($oldAbs, $newAbs)) {
+    if ($oldRel !== '' && $newAbs && file_exists($oldAbs) && !file_exists($newAbs) && rename($oldAbs, $newAbs)) {
         logAudit($DATA_DIR, 'rename', $oldRel, ['new' => relativeFromRoot($ROOT_DIR, $newAbs)]);
         flash('success', 'Elemento renombrado');
     } else {
