@@ -186,7 +186,7 @@ if ($infoRel !== '') {
             </div>
             <span class="text-xs text-slate-500">v<?= h(defined('APP_VERSION') ? APP_VERSION : '0.1.0') ?></span>
             <?php if ($user): ?>
-                <span class="text-xs text-slate-400"><?= h($user['username']) ?> / <?= h($user['role']) ?></span>
+                            <span class="text-xs text-slate-400"><?= h($user['username']) ?> / <?= h(($user['role'] ?? '') === 'guest' ? 'invitado' : $user['role']) ?></span>
                 <form method="post" action="action.php">
                     <input type="hidden" name="action" value="logout">
                     <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
@@ -307,11 +307,11 @@ if ($infoRel !== '') {
                         </label>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <label class="block text-xs text-slate-400">
-                                Nueva clave admin
+                                Nueva clave administrador
                                 <input name="admin_password" type="password" autocomplete="new-password" placeholder="Dejar igual" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100">
                             </label>
                             <label class="block text-xs text-slate-400">
-                                Nueva clave guest
+                                Nueva clave invitado
                                 <input name="guest_password" type="password" autocomplete="new-password" placeholder="Dejar igual" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100">
                             </label>
                         </div>
@@ -403,7 +403,7 @@ if ($infoRel !== '') {
                                     Descargar carpeta
                                 </a>
                                 <?php if (canDo('rename')): ?>
-                                    <form method="post" action="action.php" class="flex items-center gap-1">
+                                    <form method="post" action="action.php" class="flex items-center gap-1" data-confirm="rename" data-confirm-title="Renombrar carpeta" data-confirm-message="Confirma el nuevo nombre antes de guardar el cambio.">
                                         <input type="hidden" name="action" value="rename">
                                         <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                                         <input type="hidden" name="d" value="<?= h($currentRel) ?>">
@@ -413,7 +413,7 @@ if ($infoRel !== '') {
                                     </form>
                                 <?php endif; ?>
                                 <?php if (canDo('delete')): ?>
-                                    <form method="post" action="action.php" onsubmit="return confirm('Borrar esta carpeta y todo su contenido?')">
+                                    <form method="post" action="action.php" data-confirm="delete" data-confirm-title="Borrar carpeta" data-confirm-message="Esta accion borrara la carpeta y todo su contenido.">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                                         <input type="hidden" name="d" value="<?= h($currentRel) ?>">
@@ -480,7 +480,7 @@ if ($infoRel !== '') {
 
                             <a href="<?= h(dirUrl($currentRel, ['q' => $q, 'page' => $page, 'info' => $fileRel])) ?>"
                                class="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900/80 px-2 py-1 text-[10px] sm:text-[11px] text-slate-300 hover:bg-slate-800 hover:border-sky-500/70 hover:text-sky-200 transition-all duration-150">
-                                Info friki
+                                Detalles
                             </a>
 
                             <a href="<?= h(dlUrl($fileRel)) ?>"
@@ -496,14 +496,14 @@ if ($infoRel !== '') {
                             </a>
 
                             <?php if (canDo('share')): ?>
-                                <form method="post" action="action.php" class="flex items-center gap-1">
+                                <form method="post" action="action.php" class="flex items-center gap-1" data-confirm="rename" data-confirm-title="Renombrar archivo" data-confirm-message="Confirma el nuevo nombre antes de guardar el cambio.">
                                     <input type="hidden" name="action" value="share">
                                     <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                                     <input type="hidden" name="d" value="<?= h($currentRel) ?>">
                                     <input type="hidden" name="t" value="<?= h($fileRel) ?>">
                                     <input name="ttl_hours" type="number" min="1" max="720" value="<?= DEFAULT_SHARE_TTL_HOURS ?>" class="w-14 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100" title="Horas">
                                     <input name="password" type="password" placeholder="Clave opc." class="w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100">
-                                    <button class="rounded-lg border border-fuchsia-500/60 bg-fuchsia-500/10 px-2 py-1 text-[11px] text-fuchsia-100 hover:bg-fuchsia-500/20">Link</button>
+                                    <button class="rounded-lg border border-fuchsia-500/60 bg-fuchsia-500/10 px-2 py-1 text-[11px] text-fuchsia-100 hover:bg-fuchsia-500/20">Compartir</button>
                                 </form>
                             <?php endif; ?>
 
@@ -519,7 +519,7 @@ if ($infoRel !== '') {
                             <?php endif; ?>
 
                             <?php if (canDo('delete')): ?>
-                                <form method="post" action="action.php" onsubmit="return confirm('Borrar este archivo?')">
+                                <form method="post" action="action.php" data-confirm="delete" data-confirm-title="Borrar archivo" data-confirm-message="Esta accion borrara el archivo seleccionado.">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                                     <input type="hidden" name="d" value="<?= h($currentRel) ?>">
@@ -563,7 +563,7 @@ if ($infoRel !== '') {
             <div class="rounded-2xl border border-fuchsia-600/50 bg-fuchsia-600/10 backdrop-blur-xl p-4 shadow-[0_0_40px_rgba(134,25,143,0.45)] transition-all duration-200">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-sm font-semibold text-fuchsia-100">
-                        Info friki del archivo
+                        Detalles del archivo
                     </h2>
                     <a href="<?= h(dirUrl($currentRel, ['q' => $q, 'page' => $page])) ?>"
                        class="text-[11px] text-fuchsia-200/80 hover:text-white transition">
@@ -587,7 +587,7 @@ if ($infoRel !== '') {
             </div>
         <?php else: ?>
             <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs text-slate-400">
-                Selecciona "Info friki" en un archivo para ver detalles tecnicos (hashes, permisos, MIME, etc.).
+                Selecciona "Detalles" en un archivo para ver informacion tecnica (hashes, permisos, MIME, etc.).
             </div>
         <?php endif; ?>
 
@@ -633,6 +633,16 @@ if ($infoRel !== '') {
         </div>
     </section>
 </main>
+<div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+        <h2 id="confirm-title" class="text-lg font-semibold text-white">Confirmar accion</h2>
+        <p id="confirm-message" class="mt-2 text-sm leading-6 text-slate-300"></p>
+        <div class="mt-5 flex justify-end gap-2">
+            <button type="button" id="confirm-cancel" class="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800">Cancelar</button>
+            <button type="button" id="confirm-accept" class="rounded-xl border border-red-500/70 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 hover:bg-red-500/25">Confirmar</button>
+        </div>
+    </div>
+</div>
 <script>
 (() => {
     const transferPanel = () => document.getElementById('transfer-panel');
@@ -861,6 +871,34 @@ if ($infoRel !== '') {
         box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
 
+    function askConfirmation(form) {
+        const modal = document.getElementById('confirm-modal');
+        const title = document.getElementById('confirm-title');
+        const message = document.getElementById('confirm-message');
+        const accept = document.getElementById('confirm-accept');
+        const cancel = document.getElementById('confirm-cancel');
+        if (!modal || !title || !message || !accept || !cancel) {
+            return Promise.resolve(true);
+        }
+
+        title.textContent = form.dataset.confirmTitle || 'Confirmar accion';
+        message.textContent = form.dataset.confirmMessage || 'Confirma que quieres continuar.';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        return new Promise((resolve) => {
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                accept.onclick = null;
+                cancel.onclick = null;
+                resolve(result);
+            };
+            accept.onclick = () => cleanup(true);
+            cancel.onclick = () => cleanup(false);
+        });
+    }
+
     function bindInteractions() {
         document.querySelectorAll('[data-upload-form]').forEach((form) => {
             if (form.dataset.bound) return;
@@ -904,6 +942,7 @@ if ($infoRel !== '') {
             form.addEventListener('submit', async (event) => {
                 if (event.defaultPrevented) return;
                 event.preventDefault();
+                if (form.dataset.confirm && !(await askConfirmation(form))) return;
                 await submitActionForm(form);
             });
         });
