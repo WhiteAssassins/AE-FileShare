@@ -184,6 +184,7 @@ if ($infoRel !== '') {
                 <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Servidor en linea</span>
             </div>
+            <span class="text-xs text-slate-500">v<?= h(defined('APP_VERSION') ? APP_VERSION : '0.1.0') ?></span>
             <?php if ($user): ?>
                 <span class="text-xs text-slate-400"><?= h($user['username']) ?> / <?= h($user['role']) ?></span>
                 <form method="post" action="action.php">
@@ -204,6 +205,18 @@ if ($infoRel !== '') {
             </div>
         <?php endforeach; ?>
     </div>
+
+    <section id="share-result" class="hidden rounded-2xl border border-fuchsia-500/40 bg-fuchsia-500/10 p-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+                <h2 class="text-sm font-semibold text-fuchsia-100">Enlace compartido creado</h2>
+                <p id="share-url-text" class="mt-1 truncate font-mono text-xs text-fuchsia-50"></p>
+            </div>
+            <button type="button" id="copy-share-url" class="rounded-xl border border-fuchsia-400/60 bg-fuchsia-500/20 px-3 py-2 text-xs font-medium text-fuchsia-50 hover:bg-fuchsia-500/30">
+                Copiar enlace
+            </button>
+        </div>
+    </section>
 
     <section id="transfer-panel" class="hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-4 shadow-[0_0_40px_rgba(15,23,42,0.8)]">
         <div class="mb-3 flex items-center justify-between gap-3">
@@ -823,13 +836,29 @@ if ($infoRel !== '') {
         }
 
         toast(data.type || (data.ok ? 'success' : 'error'), data.message || 'Accion completada');
-        if (data.share_url) {
-            try {
-                await navigator.clipboard.writeText(data.share_url);
-                toast('success', 'Enlace copiado al portapapeles');
-            } catch (error) {}
-        }
         if (data.redirect) await refreshView(data.redirect);
+        if (data.share_url) {
+            showShareLink(data.share_url);
+        }
+    }
+
+    function showShareLink(url) {
+        const box = document.getElementById('share-result');
+        const text = document.getElementById('share-url-text');
+        const button = document.getElementById('copy-share-url');
+        if (!box || !text || !button) return;
+
+        text.textContent = url;
+        box.classList.remove('hidden');
+        button.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(url);
+                toast('success', 'Enlace copiado');
+            } catch (error) {
+                toast('error', 'No se pudo copiar automaticamente');
+            }
+        };
+        box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
 
     function bindInteractions() {
