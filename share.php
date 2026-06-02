@@ -4,6 +4,7 @@ require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/shares.php';
 require_once __DIR__ . '/lib/stats.php';
+require_once __DIR__ . '/lib/errors.php';
 
 startSecureSession();
 sendSecurityHeaders();
@@ -13,8 +14,7 @@ $share = getValidShare($DATA_DIR, $token);
 $error = '';
 
 if (!$share) {
-    http_response_code(404);
-    $error = 'El enlace no existe o ya expiro.';
+    renderErrorPage(410, 'Este enlace compartido no existe o ya expiro.', 'index.php');
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = (string)($_POST['password'] ?? '');
     if (verifySharePassword($share, $password)) {
