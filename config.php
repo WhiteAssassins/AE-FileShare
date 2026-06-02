@@ -1,6 +1,6 @@
 <?php
 // Titulo de la app
-$APP_TITLE = 'AEWhite Devs FileHub';
+$APP_TITLE = 'AE-FileShare';
 
 // Carpeta raiz de archivos
 $ROOT_DIR = __DIR__ . '/files';
