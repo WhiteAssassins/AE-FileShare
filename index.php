@@ -583,5 +583,273 @@ if ($infoRel !== '') {
         </div>
     </section>
 </main>
+<script>
+(() => {
+    const transferPanel = () => document.getElementById('transfer-panel');
+    const transferList = () => document.getElementById('transfer-list');
+
+    function humanBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+    }
+
+    function readFilename(xhr, fallback) {
+        const header = xhr.getResponseHeader('Content-Disposition') || '';
+        const utf = header.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf) return decodeURIComponent(utf[1].replace(/["']/g, ''));
+        const plain = header.match(/filename="([^"]+)"/i);
+        if (plain) return plain[1];
+        return fallback || 'download';
+    }
+
+    function createTransfer(title, kind) {
+        const panel = transferPanel();
+        const list = transferList();
+        panel.classList.remove('hidden');
+
+        const item = document.createElement('div');
+        item.className = 'rounded-xl border border-slate-800 bg-slate-950/70 p-3';
+        item.innerHTML = `
+            <div class="mb-2 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-100"></p>
+                    <p class="text-[11px] text-slate-500"></p>
+                </div>
+                <span class="shrink-0 rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-300"></span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div class="h-full w-0 rounded-full bg-sky-500 transition-[width] duration-150"></div>
+            </div>
+            <div class="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-slate-400">
+                <span data-progress>0%</span>
+                <span data-speed>0 B/s</span>
+                <span data-size>0 B</span>
+            </div>
+        `;
+
+        item.querySelector('p').textContent = title;
+        item.querySelector('p + p').textContent = kind;
+        item.querySelector('span.shrink-0').textContent = 'Activo';
+        list.prepend(item);
+
+        const startedAt = performance.now();
+        const bar = item.querySelector('.bg-sky-500');
+        const badge = item.querySelector('span.shrink-0');
+        const progressText = item.querySelector('[data-progress]');
+        const speedText = item.querySelector('[data-speed]');
+        const sizeText = item.querySelector('[data-size]');
+
+        return {
+            update(loaded, total) {
+                const elapsed = Math.max((performance.now() - startedAt) / 1000, 0.1);
+                const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
+                if (percent !== null) {
+                    bar.style.width = `${percent}%`;
+                    progressText.textContent = `${percent}%`;
+                    sizeText.textContent = `${humanBytes(loaded)} / ${humanBytes(total)}`;
+                } else {
+                    bar.style.width = '100%';
+                    progressText.textContent = 'Procesando';
+                    sizeText.textContent = humanBytes(loaded);
+                }
+                speedText.textContent = `${humanBytes(loaded / elapsed)}/s`;
+            },
+            done(message = 'Completado') {
+                bar.style.width = '100%';
+                bar.classList.remove('bg-sky-500');
+                bar.classList.add('bg-emerald-500');
+                badge.textContent = message;
+                badge.classList.add('border-emerald-500/50', 'text-emerald-100');
+            },
+            fail(message = 'Error') {
+                bar.classList.remove('bg-sky-500');
+                bar.classList.add('bg-red-500');
+                badge.textContent = message;
+                badge.classList.add('border-red-500/50', 'text-red-100');
+            }
+        };
+    }
+
+    function toast(type, message) {
+        const stack = document.getElementById('flash-stack');
+        if (!stack) return;
+        const node = document.createElement('div');
+        const ok = type === 'success';
+        node.className = `rounded-xl border px-4 py-3 text-sm ${ok ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-red-500/40 bg-red-500/10 text-red-100'}`;
+        node.textContent = message;
+        stack.prepend(node);
+    }
+
+    async function refreshView(url) {
+        const response = await fetch(url || window.location.href, {credentials: 'same-origin'});
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const nextMain = doc.querySelector('main');
+        const currentMain = document.querySelector('main');
+        const currentPanel = document.getElementById('transfer-panel');
+        const nextPanel = nextMain ? nextMain.querySelector('#transfer-panel') : null;
+
+        if (!nextMain || !currentMain) return;
+        if (currentPanel && nextPanel) nextPanel.replaceWith(currentPanel);
+        currentMain.replaceWith(nextMain);
+        bindInteractions();
+    }
+
+    function saveBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || 'download';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    function downloadWithProgress(url, filename, options = {}) {
+        const transfer = createTransfer(filename || 'Descarga', options.kind || 'Descarga');
+        const xhr = new XMLHttpRequest();
+        xhr.open(options.method || 'GET', url, true);
+        xhr.responseType = 'blob';
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.onprogress = (event) => transfer.update(event.loaded, event.lengthComputable ? event.total : 0);
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const finalName = readFilename(xhr, filename);
+                transfer.done('Listo');
+                saveBlob(xhr.response, finalName);
+            } else {
+                transfer.fail(`HTTP ${xhr.status}`);
+            }
+        };
+        xhr.onerror = () => transfer.fail('Error de red');
+
+        xhr.send(options.body || null);
+    }
+
+    function uploadWithProgress(form) {
+        const input = form.querySelector('input[type="file"]');
+        if (!input || input.files.length === 0) {
+            toast('error', 'Selecciona al menos un archivo');
+            return;
+        }
+
+        const totalSize = Array.from(input.files).reduce((sum, file) => sum + file.size, 0);
+        const label = input.files.length === 1 ? input.files[0].name : `${input.files.length} archivos`;
+        const transfer = createTransfer(label, 'Subida');
+        const xhr = new XMLHttpRequest();
+
+        xhr.open(form.method || 'POST', form.action, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.upload.onprogress = (event) => transfer.update(event.loaded, event.lengthComputable ? event.total : totalSize);
+        xhr.onload = async () => {
+            try {
+                const data = JSON.parse(xhr.responseText || '{}');
+                if (xhr.status >= 200 && xhr.status < 300 && data.ok) {
+                    transfer.done('Subido');
+                    toast(data.type || 'success', data.message || 'Subida completada');
+                    form.reset();
+                    await refreshView(data.redirect);
+                } else {
+                    transfer.fail('Error');
+                    toast('error', data.message || 'No se pudo subir');
+                }
+            } catch (error) {
+                transfer.fail('Error');
+                toast('error', 'Respuesta inesperada del servidor');
+            }
+        };
+        xhr.onerror = () => {
+            transfer.fail('Error de red');
+            toast('error', 'Error de red durante la subida');
+        };
+        xhr.send(new FormData(form));
+    }
+
+    async function submitActionForm(form) {
+        const action = form.querySelector('[name="action"]')?.value || '';
+        if (action === 'logout' || action === 'upload' || action === 'multizip') return;
+
+        const response = await fetch(form.action, {
+            method: form.method || 'POST',
+            body: new FormData(form),
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        const data = await response.json().catch(() => null);
+        if (!data) {
+            toast('error', 'Respuesta inesperada del servidor');
+            return;
+        }
+
+        toast(data.type || (data.ok ? 'success' : 'error'), data.message || 'Accion completada');
+        if (data.share_url) {
+            try {
+                await navigator.clipboard.writeText(data.share_url);
+                toast('success', 'Enlace copiado al portapapeles');
+            } catch (error) {}
+        }
+        if (data.redirect) await refreshView(data.redirect);
+    }
+
+    function bindInteractions() {
+        document.querySelectorAll('[data-upload-form]').forEach((form) => {
+            if (form.dataset.bound) return;
+            form.dataset.bound = '1';
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                uploadWithProgress(form);
+            });
+        });
+
+        document.querySelectorAll('[data-download]').forEach((link) => {
+            if (link.dataset.bound) return;
+            link.dataset.bound = '1';
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                downloadWithProgress(link.href, link.dataset.filename || link.textContent.trim(), {kind: 'Descarga'});
+            });
+        });
+
+        const multi = document.getElementById('multi-download-form');
+        if (multi && !multi.dataset.bound) {
+            multi.dataset.bound = '1';
+            multi.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (!multi.querySelector('input[name="items[]"]:checked')) {
+                    toast('error', 'Selecciona al menos un elemento');
+                    return;
+                }
+                downloadWithProgress(multi.action, 'seleccion.zip', {
+                    method: 'POST',
+                    body: new FormData(multi),
+                    kind: 'ZIP multiple'
+                });
+            });
+        }
+
+        document.querySelectorAll('form[method="post"][action="action.php"], form[method="post"][action$="/action.php"]').forEach((form) => {
+            const action = form.querySelector('[name="action"]')?.value || '';
+            if (form.dataset.boundAction || ['logout', 'upload', 'multizip'].includes(action)) return;
+            form.dataset.boundAction = '1';
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                await submitActionForm(form);
+            });
+        });
+    }
+
+    document.getElementById('clear-transfers')?.addEventListener('click', () => {
+        const list = transferList();
+        if (list) list.innerHTML = '';
+        transferPanel()?.classList.add('hidden');
+    });
+
+    bindInteractions();
+})();
+</script>
 </body>
 </html>
