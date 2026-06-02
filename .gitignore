@@ -1,3 +1,5 @@
+/config.php
+
 /data/*
 !/data/.gitignore
 !/data/.htaccess
