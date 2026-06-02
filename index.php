@@ -3,13 +3,18 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/auth.php';
+require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/fs.php';
 require_once __DIR__ . '/lib/stats.php';
 
 startSecureSession();
 sendSecurityHeaders();
 
-if (PRIVATE_MODE && !isAuthenticated()) {
+$settings = readSettings($DATA_DIR, $USERS);
+$USERS = $settings['users'];
+$privateMode = isPrivateModeEnabled($settings);
+
+if ($privateMode && !isAuthenticated()) {
     $messages = takeFlash();
     ?>
 <!DOCTYPE html>
@@ -186,6 +191,8 @@ if ($infoRel !== '') {
                     <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                     <button class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">Salir</button>
                 </form>
+            <?php else: ?>
+                <a href="login.php" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">Entrar</a>
             <?php endif; ?>
         </div>
     </header>
@@ -273,6 +280,36 @@ if ($infoRel !== '') {
                 <button class="rounded-lg border border-fuchsia-500/70 bg-fuchsia-500/15 px-3 py-1.5 text-xs text-fuchsia-100 hover:bg-fuchsia-500/30">Descargar seleccion</button>
             </form>
         </div>
+
+        <?php if (isAdmin()): ?>
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-800">
+                <form method="post" action="action.php" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3 space-y-3">
+                    <input type="hidden" name="action" value="settings">
+                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                        <label class="flex items-center gap-2 text-xs text-slate-300">
+                            <input type="checkbox" name="private_mode" value="1" <?= $privateMode ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-500">
+                            Requerir usuario y clave para navegar/descargar
+                        </label>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label class="block text-xs text-slate-400">
+                                Nueva clave admin
+                                <input name="admin_password" type="password" autocomplete="new-password" placeholder="Dejar igual" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100">
+                            </label>
+                            <label class="block text-xs text-slate-400">
+                                Nueva clave guest
+                                <input name="guest_password" type="password" autocomplete="new-password" placeholder="Dejar igual" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100">
+                            </label>
+                        </div>
+                        <button class="rounded-lg border border-sky-500/70 bg-sky-500/15 px-3 py-1.5 text-xs text-sky-100 hover:bg-sky-500/30">
+                            Guardar configuracion
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Las claves se guardan como hashes en <span class="font-mono">data/settings.json</span>. Si desmarcas el modo privado, cualquiera podra navegar y descargar sin login.</p>
+                </form>
+            </div>
+        <?php endif; ?>
 
         <!-- Previsualizacion arriba si hay -->
         <?php if ($previewFilePath && $previewType): ?>
