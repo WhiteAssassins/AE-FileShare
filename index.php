@@ -181,7 +181,11 @@ if ($infoRel !== '') {
             </div>
             <?php if ($user): ?>
                 <span class="text-xs text-slate-400"><?= h($user['username']) ?> / <?= h($user['role']) ?></span>
-                <a href="action.php?action=logout" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">Salir</a>
+                <form method="post" action="action.php">
+                    <input type="hidden" name="action" value="logout">
+                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                    <button class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">Salir</button>
+                </form>
             <?php endif; ?>
         </div>
     </header>
@@ -310,6 +314,7 @@ if ($infoRel !== '') {
                     <div class="group hover:bg-slate-900/80 transition-colors duration-150">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-4 py-3">
                             <div class="flex items-center gap-3">
+                                <input form="multi-download-form" type="checkbox" name="items[]" value="<?= h($dirRel) ?>" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-500">
                                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/40 group-hover:bg-sky-500/25 group-hover:scale-[1.03] transition-transform duration-150">
                                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M4 6.75A1.75 1.75 0 0 1 5.75 5h4.086c.464 0 .909.184 1.237.512l1.414 1.414A1.75 1.75 0 0 0 14.73 7.5H18.25A1.75 1.75 0 0 1 20 9.25v8A1.75 1.75 0 0 1 18.25 19h-12A1.75 1.75 0 0 1 4 17.25v-10.5Z" />
@@ -325,7 +330,7 @@ if ($infoRel !== '') {
                                     </p>
                                 </div>
                             </div>
-                            <div class="mt-2 sm:mt-0 flex items-center gap-2 sm:gap-4 justify-between sm:justify-end">
+                            <div class="mt-2 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                                 <a href="<?= h(zipDirUrl($dirRel)) ?>"
                                    class="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/70 bg-sky-500/15 px-3 py-1.5 text-[11px] sm:text-xs font-medium text-sky-100 hover:bg-sky-500/30 hover:border-sky-400 transition-all duration-150">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -335,6 +340,25 @@ if ($infoRel !== '') {
                                     </svg>
                                     Descargar carpeta
                                 </a>
+                                <?php if (canDo('rename')): ?>
+                                    <form method="post" action="action.php" class="flex items-center gap-1">
+                                        <input type="hidden" name="action" value="rename">
+                                        <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                        <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                                        <input type="hidden" name="old" value="<?= h($dirRel) ?>">
+                                        <input name="new" placeholder="Nuevo nombre" class="w-28 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100">
+                                        <button class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 hover:text-sky-200">Renombrar</button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if (canDo('delete')): ?>
+                                    <form method="post" action="action.php" onsubmit="return confirm('Borrar esta carpeta y todo su contenido?')">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                        <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                                        <input type="hidden" name="t" value="<?= h($dirRel) ?>">
+                                        <button class="rounded-lg border border-red-500/60 bg-red-500/10 px-2 py-1 text-[11px] text-red-100 hover:bg-red-500/20">Borrar</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -351,6 +375,7 @@ if ($infoRel !== '') {
                     ?>
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-4 py-3 hover:bg-slate-900/80 transition-colors duration-150">
                         <div class="flex items-center gap-3">
+                            <input form="multi-download-form" type="checkbox" name="items[]" value="<?= h($fileRel) ?>" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-500">
                             <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700
                             <?php
         $clsExtra = ' bg-slate-800/90 text-slate-200';
@@ -383,7 +408,7 @@ if ($infoRel !== '') {
                             </div>
                         </div>
 
-                        <div class="mt-2 sm:mt-0 flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+                        <div class="mt-2 sm:mt-0 flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
                             <?php if (in_array($type, ['image','video','audio']) || ($type === 'doc' && $ext === 'pdf')): ?>
                                 <a href="<?= h(dirUrl($currentRel, ['q' => $q, 'page' => $page, 'preview' => $fileRel])) ?>"
                                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-800/70 px-3 py-1.5 text-[11px] sm:text-xs text-slate-100 hover:bg-slate-700 hover:border-slate-400 transition-all duration-150">
@@ -405,6 +430,39 @@ if ($infoRel !== '') {
                                 </svg>
                                 Descargar
                             </a>
+
+                            <?php if (canDo('share')): ?>
+                                <form method="post" action="action.php" class="flex items-center gap-1">
+                                    <input type="hidden" name="action" value="share">
+                                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                                    <input type="hidden" name="t" value="<?= h($fileRel) ?>">
+                                    <input name="ttl_hours" type="number" min="1" max="720" value="<?= DEFAULT_SHARE_TTL_HOURS ?>" class="w-14 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100" title="Horas">
+                                    <input name="password" type="password" placeholder="Clave opc." class="w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100">
+                                    <button class="rounded-lg border border-fuchsia-500/60 bg-fuchsia-500/10 px-2 py-1 text-[11px] text-fuchsia-100 hover:bg-fuchsia-500/20">Link</button>
+                                </form>
+                            <?php endif; ?>
+
+                            <?php if (canDo('rename')): ?>
+                                <form method="post" action="action.php" class="flex items-center gap-1">
+                                    <input type="hidden" name="action" value="rename">
+                                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                                    <input type="hidden" name="old" value="<?= h($fileRel) ?>">
+                                    <input name="new" placeholder="Nuevo nombre" class="w-28 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100">
+                                    <button class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 hover:text-sky-200">Renombrar</button>
+                                </form>
+                            <?php endif; ?>
+
+                            <?php if (canDo('delete')): ?>
+                                <form method="post" action="action.php" onsubmit="return confirm('Borrar este archivo?')">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                                    <input type="hidden" name="t" value="<?= h($fileRel) ?>">
+                                    <button class="rounded-lg border border-red-500/60 bg-red-500/10 px-2 py-1 text-[11px] text-red-100 hover:bg-red-500/20">Borrar</button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
