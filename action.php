@@ -204,7 +204,10 @@ if ($action === 'settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    writeSettings($DATA_DIR, $settings);
+    if (!writeSettings($DATA_DIR, $settings)) {
+        actionDone($dir, 'error', 'No se pudo guardar data/settings.json. En Debian revisa permisos de data/ para el usuario del servidor web.');
+    }
+
     logAudit($DATA_DIR, 'settings', '', ['private_mode' => $settings['private_mode']]);
     actionDone($dir, 'success', 'Configuracion guardada');
 }
@@ -214,20 +217,51 @@ if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $dir = cleanRelativePath($_POST['d'] ?? '');
     $destDir = resolvePath($ROOT_DIR, $dir);
 
-    if (!is_dir($destDir) || empty($_FILES['files'])) {
-        actionDone($dir, 'error', 'No se pudo subir archivos');
+    $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    $postMax = iniBytes((string)ini_get('post_max_size'));
+    if ($postMax > 0 && $contentLength > $postMax) {
+        actionDone($dir, 'error', 'La subida supera post_max_size de PHP (' . humanFilesize($postMax) . ').');
+    }
+
+    if (!filter_var(ini_get('file_uploads'), FILTER_VALIDATE_BOOLEAN)) {
+        actionDone($dir, 'error', 'file_uploads esta desactivado en PHP.');
+    }
+
+    if (!is_dir($destDir)) {
+        actionDone($dir, 'error', 'La carpeta destino no existe.');
+    }
+
+    if (!is_writable($destDir)) {
+        actionDone($dir, 'error', 'La carpeta files/ no es escribible por PHP. En Debian revisa permisos/propietario.');
+    }
+
+    if (empty($_FILES['files'])) {
+        actionDone($dir, 'error', 'PHP no recibio archivos. Revisa upload_max_filesize y post_max_size.');
     }
 
     $uploaded = 0;
+    $errors = [];
     foreach ($_FILES['files']['name'] as $i => $originalName) {
-        if ($_FILES['files']['error'][$i] !== UPLOAD_ERR_OK) continue;
-        if ($_FILES['files']['size'][$i] > MAX_UPLOAD_BYTES) continue;
+        if ($_FILES['files']['error'][$i] !== UPLOAD_ERR_OK) {
+            $errors[] = safeStorageName((string)$originalName) . ': ' . uploadErrorMessage((int)$_FILES['files']['error'][$i]);
+            continue;
+        }
+        if ($_FILES['files']['size'][$i] > MAX_UPLOAD_BYTES) {
+            $errors[] = safeStorageName((string)$originalName) . ': supera el limite de la app (' . humanFilesize(MAX_UPLOAD_BYTES) . ').';
+            continue;
+        }
 
         $name = safeStorageName($originalName);
-        if (isBlockedExtension($name, $BLOCKED_UPLOAD_EXTENSIONS)) continue;
+        if (isBlockedExtension($name, $BLOCKED_UPLOAD_EXTENSIONS)) {
+            $errors[] = $name . ': extension bloqueada.';
+            continue;
+        }
 
         $dest = buildPathInRoot($ROOT_DIR, trim($dir . '/' . $name, '/'));
-        if ($dest === null) continue;
+        if ($dest === null) {
+            $errors[] = $name . ': ruta destino invalida.';
+            continue;
+        }
 
         $base = pathinfo($name, PATHINFO_FILENAME);
         $ext = pathinfo($name, PATHINFO_EXTENSION);
@@ -241,10 +275,18 @@ if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($dest && move_uploaded_file($_FILES['files']['tmp_name'][$i], $dest)) {
             $uploaded++;
             logAudit($DATA_DIR, 'upload', relativeFromRoot($ROOT_DIR, $dest));
+        } else {
+            $errors[] = $name . ': PHP no pudo mover el archivo a files/.';
         }
     }
 
-    actionDone($dir, $uploaded > 0 ? 'success' : 'error', $uploaded > 0 ? "Subidos {$uploaded} archivo(s)" : 'No se subio ningun archivo valido');
+    if ($uploaded > 0) {
+        $message = "Subidos {$uploaded} archivo(s)";
+        if (!empty($errors)) $message .= '. Algunos fallaron: ' . implode(' | ', array_slice($errors, 0, 3));
+        actionDone($dir, 'success', $message);
+    }
+
+    actionDone($dir, 'error', !empty($errors) ? implode(' | ', array_slice($errors, 0, 5)) : 'No se subio ningun archivo valido.');
 }
 
 if ($action === 'mkdir' && $_SERVER['REQUEST_METHOD'] === 'POST') {

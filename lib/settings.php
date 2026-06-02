@@ -28,9 +28,23 @@ function readSettings(string $dataDir, array $users): array
     ];
 }
 
-function writeSettings(string $dataDir, array $settings): void
+function writeSettings(string $dataDir, array $settings): bool
 {
-    @file_put_contents(settingsFile($dataDir), json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+    if (!is_dir($dataDir) || !is_writable($dataDir)) {
+        return false;
+    }
+
+    $file = settingsFile($dataDir);
+    if (is_file($file) && !is_writable($file)) {
+        return false;
+    }
+
+    $json = json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        return false;
+    }
+
+    return @file_put_contents($file, $json, LOCK_EX) !== false;
 }
 
 function isPrivateModeEnabled(array $settings): bool

@@ -32,6 +32,45 @@ admin / admin123
 10. Sube archivos a `files/` o desde la interfaz web.
 11. Cuando todo este listo, decide si quieres dejarlo privado o abierto.
 
+## Debian / Apache
+
+En Debian el usuario del servidor web suele ser `www-data`. Si no puedes subir archivos o cambiar claves desde el panel admin, casi siempre faltan permisos de escritura en `files/` o `data/`.
+
+Desde la carpeta del proyecto:
+
+```bash
+sudo chown -R www-data:www-data files data
+sudo find files data -type d -exec chmod 775 {} \;
+sudo find files data -type f -exec chmod 664 {} \;
+```
+
+Instala extensiones utiles:
+
+```bash
+sudo apt update
+sudo apt install php-zip php-mbstring
+sudo systemctl restart apache2
+```
+
+Revisa limites de subida en el `php.ini` que use Apache:
+
+```ini
+file_uploads = On
+upload_max_filesize = 512M
+post_max_size = 512M
+max_file_uploads = 50
+max_execution_time = 300
+max_input_time = 300
+```
+
+Despues reinicia Apache:
+
+```bash
+sudo systemctl restart apache2
+```
+
+Como admin, revisa el panel **Estado del servidor** dentro de la app. Si `files/ escribible`, `data/ escribible` o `settings.json escribible` aparecen en rojo, la subida o el cambio de claves no funcionaran.
+
 ## Configuracion Con `.env`
 
 El archivo `.env` es opcional. Sirve para ajustar valores frecuentes sin tocar `config.php`.

@@ -13,6 +13,36 @@ function humanFilesize(int $bytes, int $decimals = 2): string
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . ' ' . $units[$factor];
 }
 
+function iniBytes(string $value): int
+{
+    $value = trim($value);
+    if ($value === '') return 0;
+
+    $unit = strtolower($value[strlen($value) - 1]);
+    $bytes = (int)$value;
+
+    return match ($unit) {
+        'g' => $bytes * 1024 * 1024 * 1024,
+        'm' => $bytes * 1024 * 1024,
+        'k' => $bytes * 1024,
+        default => $bytes,
+    };
+}
+
+function uploadErrorMessage(int $error): string
+{
+    return match ($error) {
+        UPLOAD_ERR_INI_SIZE => 'El archivo supera upload_max_filesize de PHP.',
+        UPLOAD_ERR_FORM_SIZE => 'El archivo supera el limite permitido por el formulario.',
+        UPLOAD_ERR_PARTIAL => 'La subida se interrumpio antes de completarse.',
+        UPLOAD_ERR_NO_FILE => 'No se recibio ningun archivo.',
+        UPLOAD_ERR_NO_TMP_DIR => 'PHP no tiene carpeta temporal para subidas.',
+        UPLOAD_ERR_CANT_WRITE => 'PHP no pudo escribir el archivo temporal en disco.',
+        UPLOAD_ERR_EXTENSION => 'Una extension de PHP bloqueo la subida.',
+        default => 'Error desconocido durante la subida.',
+    };
+}
+
 function resolvePath(string $root, string $relative): string
 {
     $rootReal = realpath($root);

@@ -96,6 +96,20 @@ $stats = readStats($DATA_DIR, $ROOT_DIR);
 $messages = takeFlash();
 $user = currentUser();
 $csrf = csrfToken();
+$serverChecks = [];
+if (isAdmin()) {
+    $settingsPath = settingsFile($DATA_DIR);
+    $serverChecks = [
+        ['label' => 'PHP', 'ok' => version_compare(PHP_VERSION, '8.0.0', '>='), 'detail' => PHP_VERSION],
+        ['label' => 'file_uploads', 'ok' => filter_var(ini_get('file_uploads'), FILTER_VALIDATE_BOOLEAN), 'detail' => (string)ini_get('file_uploads')],
+        ['label' => 'upload_max_filesize', 'ok' => iniBytes((string)ini_get('upload_max_filesize')) >= 1, 'detail' => (string)ini_get('upload_max_filesize')],
+        ['label' => 'post_max_size', 'ok' => iniBytes((string)ini_get('post_max_size')) >= 1, 'detail' => (string)ini_get('post_max_size')],
+        ['label' => 'files/ escribible', 'ok' => is_dir($ROOT_DIR) && is_writable($ROOT_DIR), 'detail' => $ROOT_DIR],
+        ['label' => 'data/ escribible', 'ok' => is_dir($DATA_DIR) && is_writable($DATA_DIR), 'detail' => $DATA_DIR],
+        ['label' => 'settings.json escribible', 'ok' => (!is_file($settingsPath) && is_writable($DATA_DIR)) || is_writable($settingsPath), 'detail' => $settingsPath],
+        ['label' => 'ZipArchive', 'ok' => class_exists('ZipArchive'), 'detail' => class_exists('ZipArchive') ? 'disponible' : 'no disponible'],
+    ];
+}
 
 // Helper URLs
 function dirUrl(string $rel, array $extra = []): string {
@@ -321,6 +335,24 @@ if ($infoRel !== '') {
                     </div>
                     <p class="text-[11px] text-slate-500">Las claves se guardan como hashes en <span class="font-mono">data/settings.json</span>. Si desmarcas el modo privado, cualquiera podra navegar y descargar sin login.</p>
                 </form>
+            </div>
+
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-800">
+                <div class="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                    <h2 class="text-sm font-semibold text-sky-100">Estado del servidor</h2>
+                    <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                        <?php foreach ($serverChecks as $check): ?>
+                            <div class="rounded-lg border <?= $check['ok'] ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-red-500/40 bg-red-500/10' ?> p-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs font-medium <?= $check['ok'] ? 'text-emerald-100' : 'text-red-100' ?>"><?= h($check['label']) ?></span>
+                                    <span class="text-[10px] <?= $check['ok'] ? 'text-emerald-200' : 'text-red-200' ?>"><?= $check['ok'] ? 'OK' : 'Revisar' ?></span>
+                                </div>
+                                <p class="mt-1 truncate text-[10px] text-slate-400" title="<?= h((string)$check['detail']) ?>"><?= h((string)$check['detail']) ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="mt-3 text-[11px] text-slate-500">En Debian, si algo aparece en rojo, normalmente se corrige dando permisos a <span class="font-mono">www-data</span> sobre <span class="font-mono">files/</span> y <span class="font-mono">data/</span>, o ajustando limites de PHP.</p>
+                </div>
             </div>
         <?php endif; ?>
 
