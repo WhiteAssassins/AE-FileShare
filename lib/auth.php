@@ -49,6 +49,9 @@ function requireCsrf(): void
 {
     $token = $_POST['csrf'] ?? '';
     if (!is_string($token) || !hash_equals(csrfToken(), $token)) {
+        if (function_exists('renderErrorPage')) {
+            renderErrorPage(403, 'La sesion expiro o el formulario no es valido. Vuelve a intentarlo.', 'index.php');
+        }
         http_response_code(403);
         echo 'CSRF invalido';
         exit;
@@ -58,6 +61,9 @@ function requireCsrf(): void
 function requireAuth(): void
 {
     if (!isAuthenticated()) {
+        if (function_exists('renderErrorPage')) {
+            renderErrorPage(401, 'Inicia sesion para continuar.', 'login.php', 'Iniciar sesion');
+        }
         http_response_code(401);
         echo 'No autenticado';
         exit;
@@ -92,6 +98,9 @@ function requirePermission(string $permission): void
 {
     requireAuth();
     if (!canDo($permission)) {
+        if (function_exists('renderErrorPage')) {
+            renderErrorPage(403, 'Tu usuario no tiene permiso para realizar esta accion.', 'index.php');
+        }
         http_response_code(403);
         echo 'No tienes permiso para esta accion';
         exit;
