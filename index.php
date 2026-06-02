@@ -836,6 +836,7 @@ if ($infoRel !== '') {
             if (form.dataset.boundAction || ['logout', 'upload', 'multizip'].includes(action)) return;
             form.dataset.boundAction = '1';
             form.addEventListener('submit', async (event) => {
+                if (event.defaultPrevented) return;
                 event.preventDefault();
                 await submitActionForm(form);
             });
