@@ -174,13 +174,23 @@ if ($infoRel !== '') {
             </h1>
    
         </div>
-        <div class="hidden sm:flex items-center">
+        <div class="hidden sm:flex items-center gap-3">
             <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-100">
                 <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Servidor en linea</span>
             </div>
+            <?php if ($user): ?>
+                <span class="text-xs text-slate-400"><?= h($user['username']) ?> / <?= h($user['role']) ?></span>
+                <a href="action.php?action=logout" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">Salir</a>
+            <?php endif; ?>
         </div>
     </header>
+
+    <?php foreach ($messages as $message): ?>
+        <div class="rounded-xl border px-4 py-3 text-sm <?= $message['type'] === 'success' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-red-500/40 bg-red-500/10 text-red-100' ?>">
+            <?= h($message['message']) ?>
+        </div>
+    <?php endforeach; ?>
 
     <!-- Panel de busqueda + breadcrumbs -->
     <section class="rounded-2xl border border-slate-800 bg-slate-900/80 shadow-[0_0_40px_rgba(15,23,42,0.9)] backdrop-blur-xl overflow-hidden">
