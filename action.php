@@ -24,6 +24,28 @@ function redirectHome(): void
     exit;
 }
 
+function isAjaxRequest(): bool
+{
+    return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+}
+
+function actionDone(string $dir, string $type, string $message, array $extra = []): void
+{
+    if (isAjaxRequest()) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok' => $type === 'success',
+            'type' => $type,
+            'message' => $message,
+            'redirect' => 'index.php?' . http_build_query(['d' => cleanRelativePath($dir)]),
+        ] + $extra);
+        exit;
+    }
+
+    flash($type, $message);
+    redirectToDir($dir);
+}
+
 function addZipEntry(ZipArchive $zip, string $root, string $absPath, string $baseName = ''): void
 {
     $name = $baseName !== '' ? $baseName : relativeFromRoot($root, $absPath);
@@ -150,8 +172,7 @@ if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $destDir = resolvePath($ROOT_DIR, $dir);
 
     if (!is_dir($destDir) || empty($_FILES['files'])) {
-        flash('error', 'No se pudo subir archivos');
-        redirectToDir($dir);
+        actionDone($dir, 'error', 'No se pudo subir archivos');
     }
 
     $uploaded = 0;
@@ -180,8 +201,7 @@ if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    flash($uploaded > 0 ? 'success' : 'error', $uploaded > 0 ? "Subidos {$uploaded} archivo(s)" : 'No se subio ningun archivo valido');
-    redirectToDir($dir);
+    actionDone($dir, $uploaded > 0 ? 'success' : 'error', $uploaded > 0 ? "Subidos {$uploaded} archivo(s)" : 'No se subio ningun archivo valido');
 }
 
 if ($action === 'mkdir' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -192,11 +212,10 @@ if ($action === 'mkdir' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($dest && !file_exists($dest) && mkdir($dest, 0775, true)) {
         logAudit($DATA_DIR, 'mkdir', relativeFromRoot($ROOT_DIR, $dest));
-        flash('success', 'Carpeta creada');
+        actionDone($dir, 'success', 'Carpeta creada');
     } else {
-        flash('error', 'No se pudo crear la carpeta');
+        actionDone($dir, 'error', 'No se pudo crear la carpeta');
     }
-    redirectToDir($dir);
 }
 
 if ($action === 'rename' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -209,11 +228,10 @@ if ($action === 'rename' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($oldRel !== '' && $newAbs && file_exists($oldAbs) && !file_exists($newAbs) && rename($oldAbs, $newAbs)) {
         logAudit($DATA_DIR, 'rename', $oldRel, ['new' => relativeFromRoot($ROOT_DIR, $newAbs)]);
-        flash('success', 'Elemento renombrado');
+        actionDone($dir, 'success', 'Elemento renombrado');
     } else {
-        flash('error', 'No se pudo renombrar');
+        actionDone($dir, 'error', 'No se pudo renombrar');
     }
-    redirectToDir($dir);
 }
 
 if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -238,11 +256,10 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($ok) {
         logAudit($DATA_DIR, 'delete', $rel);
-        flash('success', 'Elemento borrado');
+        actionDone($dir, 'success', 'Elemento borrado');
     } else {
-        flash('error', 'No se pudo borrar');
+        actionDone($dir, 'error', 'No se pudo borrar');
     }
-    redirectToDir($dir);
 }
 
 if ($action === 'share' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -252,8 +269,7 @@ if ($action === 'share' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $abs = resolvePath($ROOT_DIR, $rel);
 
     if (!is_file($abs)) {
-        flash('error', 'Solo se pueden compartir archivos');
-        redirectToDir($dir);
+        actionDone($dir, 'error', 'Solo se pueden compartir archivos');
     }
 
     $ttl = max(1, min(24 * 30, (int)($_POST['ttl_hours'] ?? DEFAULT_SHARE_TTL_HOURS)));
@@ -263,8 +279,7 @@ if ($action === 'share' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $url = $scheme . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']) . '/share.php?s=' . $share['token'];
 
     logAudit($DATA_DIR, 'share', $rel, ['expires_at' => $share['expires_at'], 'password' => $password !== '']);
-    flash('success', 'Enlace creado: ' . $url);
-    redirectToDir($dir);
+    actionDone($dir, 'success', 'Enlace creado: ' . $url, ['share_url' => $url]);
 }
 
 if ($action === 'multizip' && $_SERVER['REQUEST_METHOD'] === 'POST') {
