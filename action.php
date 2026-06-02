@@ -6,6 +6,7 @@ require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/stats.php';
 require_once __DIR__ . '/lib/shares.php';
+require_once __DIR__ . '/lib/errors.php';
 
 startSecureSession();
 sendSecurityHeaders();
@@ -55,6 +56,18 @@ function actionDone(string $dir, string $type, string $message, array $extra = [
 
     flash($type, $message);
     redirectToDir($dir);
+}
+
+function actionError(int $status, string $message, string $href = 'index.php'): never
+{
+    if (isAjaxRequest()) {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'type' => 'error', 'message' => $message]);
+        exit;
+    }
+
+    renderErrorPage($status, $message, $href);
 }
 
 function addZipEntry(ZipArchive $zip, string $root, string $absPath, string $baseName = ''): void
@@ -143,22 +156,16 @@ if ($action === 'sharedownload') {
     $share = getValidShare($DATA_DIR, $token);
 
     if (!$share) {
-        http_response_code(404);
-        echo 'Enlace no encontrado o expirado';
-        exit;
+        renderErrorPage(410, 'Este enlace compartido no existe o ya expiro.', 'index.php');
     }
 
     if (shareNeedsPassword($share) && empty($_SESSION['share_ok'][$token])) {
-        http_response_code(403);
-        echo 'Este enlace requiere contrasena';
-        exit;
+        renderErrorPage(403, 'Este enlace requiere contrasena antes de descargar.', 'share.php?' . http_build_query(['s' => $token]), 'Abrir enlace');
     }
 
     $abs = resolvePath($ROOT_DIR, $share['path']);
     if (!is_file($abs)) {
-        http_response_code(404);
-        echo 'Archivo no encontrado';
-        exit;
+        renderErrorPage(404, 'El archivo de este enlace ya no esta disponible.', 'index.php');
     }
 
     logDownload($DATA_DIR, relativeFromRoot($ROOT_DIR, $abs), filesize($abs), 'shared-file');
@@ -352,15 +359,11 @@ if ($action === 'download' || $action === 'preview') {
     if ($privateMode) requireAuth();
     $abs = resolvePath($ROOT_DIR, $target);
     if (!is_file($abs)) {
-        http_response_code(404);
-        echo 'Archivo no encontrado';
-        exit;
+        actionError(404, 'El archivo solicitado no existe o fue movido.');
     }
 
     if ($action === 'preview' && !isPreviewable($abs)) {
-        http_response_code(415);
-        echo 'Vista previa no soportada';
-        exit;
+        actionError(415, 'Este tipo de archivo no tiene vista previa disponible.');
     }
 
     $rel = relativeFromRoot($ROOT_DIR, $abs);
@@ -378,17 +381,13 @@ if ($action === 'zipdir') {
     if ($privateMode) requireAuth();
     $absDir = resolvePath($ROOT_DIR, $target);
     if (!is_dir($absDir) || !class_exists('ZipArchive')) {
-        http_response_code(404);
-        echo 'Carpeta no encontrada o ZIP no disponible';
-        exit;
+        actionError(404, 'La carpeta no existe o la extension ZIP no esta disponible.');
     }
 
     $zip = new ZipArchive();
     $tmpZip = tempnam(sys_get_temp_dir(), 'fhub_') . '.zip';
     if ($zip->open($tmpZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-        http_response_code(500);
-        echo 'No se pudo crear el ZIP';
-        exit;
+        actionError(500, 'No se pudo crear el archivo ZIP.');
     }
 
     addZipEntry($zip, $ROOT_DIR, $absDir, basename($absDir) ?: 'carpeta');
@@ -401,4 +400,4 @@ if ($action === 'zipdir') {
 }
 
 http_response_code(400);
-echo 'Accion invalida';
+renderErrorPage(400, 'La accion solicitada no es valida.');
