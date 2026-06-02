@@ -190,11 +190,21 @@ if ($infoRel !== '') {
         </div>
     </header>
 
-    <?php foreach ($messages as $message): ?>
-        <div class="rounded-xl border px-4 py-3 text-sm <?= $message['type'] === 'success' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-red-500/40 bg-red-500/10 text-red-100' ?>">
-            <?= h($message['message']) ?>
+    <div id="flash-stack" class="space-y-3">
+        <?php foreach ($messages as $message): ?>
+            <div class="rounded-xl border px-4 py-3 text-sm <?= $message['type'] === 'success' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-red-500/40 bg-red-500/10 text-red-100' ?>">
+                <?= h($message['message']) ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <section id="transfer-panel" class="hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-4 shadow-[0_0_40px_rgba(15,23,42,0.8)]">
+        <div class="mb-3 flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-sky-100">Transferencias</h2>
+            <button type="button" id="clear-transfers" class="rounded-lg border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:bg-slate-800">Limpiar</button>
         </div>
-    <?php endforeach; ?>
+        <div id="transfer-list" class="space-y-3"></div>
+    </section>
 
     <!-- Panel de busqueda + breadcrumbs -->
     <section class="rounded-2xl border border-slate-800 bg-slate-900/80 shadow-[0_0_40px_rgba(15,23,42,0.9)] backdrop-blur-xl overflow-hidden">
@@ -230,7 +240,7 @@ if ($infoRel !== '') {
 
         <div class="px-4 sm:px-6 py-4 border-b border-slate-800 grid gap-3 lg:grid-cols-3">
             <?php if (canDo('upload')): ?>
-                <form method="post" action="action.php" enctype="multipart/form-data" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                <form method="post" action="action.php" enctype="multipart/form-data" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3" data-upload-form>
                     <input type="hidden" name="action" value="upload">
                     <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
                     <input type="hidden" name="d" value="<?= h($currentRel) ?>">
@@ -332,6 +342,8 @@ if ($infoRel !== '') {
                             </div>
                             <div class="mt-2 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-3 justify-between sm:justify-end">
                                 <a href="<?= h(zipDirUrl($dirRel)) ?>"
+                                   data-download
+                                   data-filename="<?= h(safeDownloadFilename($dirName . '.zip')) ?>"
                                    class="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/70 bg-sky-500/15 px-3 py-1.5 text-[11px] sm:text-xs font-medium text-sky-100 hover:bg-sky-500/30 hover:border-sky-400 transition-all duration-150">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -422,6 +434,8 @@ if ($infoRel !== '') {
                             </a>
 
                             <a href="<?= h(dlUrl($fileRel)) ?>"
+                               data-download
+                               data-filename="<?= h(safeDownloadFilename($fileName)) ?>"
                                class="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/70 bg-sky-500/15 px-3 py-1.5 text-[11px] sm:text-xs font-medium text-sky-100 hover:bg-sky-500/30 hover:border-sky-400 transition-all duration-150">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
