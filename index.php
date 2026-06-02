@@ -224,6 +224,42 @@ if ($infoRel !== '') {
             </form>
         </div>
 
+        <div class="px-4 sm:px-6 py-4 border-b border-slate-800 grid gap-3 lg:grid-cols-3">
+            <?php if (canDo('upload')): ?>
+                <form method="post" action="action.php" enctype="multipart/form-data" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                    <input type="hidden" name="action" value="upload">
+                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                    <label class="block text-xs text-slate-400 mb-2">Subir archivos</label>
+                    <div class="flex gap-2">
+                        <input type="file" name="files[]" multiple class="min-w-0 flex-1 text-xs text-slate-300 file:mr-2 file:rounded-lg file:border-0 file:bg-sky-500/20 file:px-3 file:py-1.5 file:text-sky-100">
+                        <button class="rounded-lg border border-sky-500/70 bg-sky-500/15 px-3 py-1.5 text-xs text-sky-100 hover:bg-sky-500/30">Subir</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+
+            <?php if (canDo('mkdir')): ?>
+                <form method="post" action="action.php" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                    <input type="hidden" name="action" value="mkdir">
+                    <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                    <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                    <label class="block text-xs text-slate-400 mb-2">Crear carpeta</label>
+                    <div class="flex gap-2">
+                        <input name="name" required placeholder="Nombre" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100">
+                        <button class="rounded-lg border border-emerald-500/70 bg-emerald-500/15 px-3 py-1.5 text-xs text-emerald-100 hover:bg-emerald-500/30">Crear</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+
+            <form id="multi-download-form" method="post" action="action.php" class="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                <input type="hidden" name="action" value="multizip">
+                <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                <input type="hidden" name="d" value="<?= h($currentRel) ?>">
+                <label class="block text-xs text-slate-400 mb-2">Descarga multiple</label>
+                <button class="rounded-lg border border-fuchsia-500/70 bg-fuchsia-500/15 px-3 py-1.5 text-xs text-fuchsia-100 hover:bg-fuchsia-500/30">Descargar seleccion</button>
+            </form>
+        </div>
+
         <!-- Previsualizacion arriba si hay -->
         <?php if ($previewFilePath && $previewType): ?>
             <div class="px-4 sm:px-6 pt-4">
