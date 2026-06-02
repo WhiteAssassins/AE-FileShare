@@ -1,27 +1,26 @@
 <?php
-// Titulo de la app
+// Copy this file to config.php and adjust values for your server.
+
 $APP_TITLE = 'AE-FileShare';
 
-// Carpeta raiz de archivos
 $ROOT_DIR = __DIR__ . '/files';
-
-// Carpeta para logs y datos
 $DATA_DIR = __DIR__ . '/data';
 
-// Archivos por pagina
 define('FILES_PER_PAGE', 30);
 define('PRIVATE_MODE', true);
 define('MAX_UPLOAD_BYTES', 1024 * 1024 * 1024);
 define('DEFAULT_SHARE_TTL_HOURS', 24);
 
+// Generate password hashes with:
+// php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
 $USERS = [
     'admin' => [
-        'password_hash' => '$2y$10$b7Ws3fBSwLMiGHb8PHS6euRFc9Mc/b2lWAPMMspU3UiIyJzvhAGa.',
+        'password_hash' => 'REPLACE_WITH_ADMIN_PASSWORD_HASH',
         'role' => 'admin',
         'permissions' => ['upload', 'mkdir', 'rename', 'delete', 'share'],
     ],
     'guest' => [
-        'password_hash' => '$2y$10$XNLstHMVGTNlLOY8/WVHrOrA9zTtuwXVSGZZmluVUcAx3/CWOqn5K',
+        'password_hash' => 'REPLACE_WITH_GUEST_PASSWORD_HASH',
         'role' => 'guest',
         'permissions' => ['upload'],
     ],
