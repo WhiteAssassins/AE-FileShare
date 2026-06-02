@@ -1,5 +1,5 @@
 <?php
-// Copy this file to config.php and adjust values for your server.
+// Copia este archivo como config.php y ajusta los valores de tu servidor.
 
 require_once __DIR__ . '/lib/env.php';
 
@@ -17,10 +17,10 @@ define('PRIVATE_MODE', envBool($ENV, 'PRIVATE_MODE', true));
 define('MAX_UPLOAD_BYTES', envInt($ENV, 'MAX_UPLOAD_BYTES', 1024 * 1024 * 1024));
 define('DEFAULT_SHARE_TTL_HOURS', envInt($ENV, 'DEFAULT_SHARE_TTL_HOURS', 24));
 
-// Default development access:
+// Acceso inicial de desarrollo:
 // admin / admin123
 // guest / guest123
-// Change these from the admin panel after the first login.
+// Cambia estas claves desde el panel de administracion despues del primer acceso.
 $USERS = [
     'admin' => [
         'password_hash' => '$2y$10$b7Ws3fBSwLMiGHb8PHS6euRFc9Mc/b2lWAPMMspU3UiIyJzvhAGa.',
