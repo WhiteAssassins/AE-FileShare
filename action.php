@@ -2,11 +2,11 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/security.php';
+require_once __DIR__ . '/lib/errors.php';
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/stats.php';
 require_once __DIR__ . '/lib/shares.php';
-require_once __DIR__ . '/lib/errors.php';
 
 startSecureSession();
 sendSecurityHeaders();
