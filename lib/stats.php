@@ -17,6 +17,23 @@ function logDownload(string $dataDir, string $relPath, int $sizeBytes, string $k
     @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
 }
 
+function logAudit(string $dataDir, string $action, string $path = '', array $extra = []): void
+{
+    $logFile = $dataDir . '/audit.log';
+    $user = $_SESSION['user']['username'] ?? 'public';
+    $line = json_encode([
+        'ts' => date('c'),
+        'user' => $user,
+        'ip' => getClientIp(),
+        'ua' => getUserAgent(),
+        'action' => $action,
+        'path' => $path,
+        'extra' => $extra,
+    ], JSON_UNESCAPED_SLASHES) . "\n";
+
+    @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
 function readStats(string $dataDir, string $rootDir): array
 {
     $logFile = $dataDir . '/downloads.log';
