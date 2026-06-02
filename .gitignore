@@ -1,4 +1,5 @@
 /config.php
+/.env
 
 /data/*
 !/data/.gitignore
