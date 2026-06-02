@@ -17,19 +17,36 @@ Mini centro de archivos en PHP para compartir archivos desde una carpeta del ser
 
 1. Sube el proyecto al servidor.
 2. Copia `config.example.php` como `config.php`.
-3. Asegurate de que existan las carpetas `files/` y `data/`.
-4. Dale permiso de escritura a PHP sobre `data/`.
-5. Entra al dominio, por ejemplo `https://file.aewhitedevs.com`.
-6. Inicia sesion con el usuario inicial:
+3. Opcionalmente copia `.env.example` como `.env` si quieres configurar rutas o limites sin editar PHP.
+4. Asegurate de que existan las carpetas `files/` y `data/`.
+5. Dale permiso de escritura a PHP sobre `data/`.
+6. Entra al dominio, por ejemplo `https://file.aewhitedevs.com`.
+7. Inicia sesion con el usuario inicial:
 
 ```text
 admin / admin123
 ```
 
-7. En el panel superior de administracion, cambia la clave de `admin`.
-8. Si vas a usar invitados, cambia tambien la clave de `guest`.
-9. Sube archivos a `files/` o desde la interfaz web.
-10. Cuando todo este listo, decide si quieres dejarlo privado o abierto.
+8. En el panel superior de administracion, cambia la clave de `admin`.
+9. Si vas a usar invitados, cambia tambien la clave de `guest`.
+10. Sube archivos a `files/` o desde la interfaz web.
+11. Cuando todo este listo, decide si quieres dejarlo privado o abierto.
+
+## Configuracion Con `.env`
+
+El archivo `.env` es opcional. Sirve para ajustar valores frecuentes sin tocar `config.php`.
+
+```text
+APP_TITLE=AE-FileShare
+ROOT_DIR=files
+DATA_DIR=data
+PRIVATE_MODE=true
+FILES_PER_PAGE=30
+MAX_UPLOAD_BYTES=1073741824
+DEFAULT_SHARE_TTL_HOURS=24
+```
+
+`config.php` sigue siendo necesario porque define usuarios iniciales y extensiones bloqueadas.
 
 ## Configuracion Desde La Web
 
@@ -77,6 +94,16 @@ Tambien puedes editar `config.php` directamente para cambiar:
 - `$BLOCKED_UPLOAD_EXTENSIONS`
 
 Si existe `data/settings.json`, sus valores de usuarios y modo privado tienen prioridad sobre `config.php`.
+
+## Version
+
+Version actual: `v0.1.0`.
+
+Consulta `CHANGELOG.md` para ver cambios por version.
+
+## Licencia
+
+Este proyecto usa licencia MIT. Consulta `LICENSE`.
 
 ## Uso
 
