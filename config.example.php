@@ -1,15 +1,21 @@
 <?php
 // Copy this file to config.php and adjust values for your server.
 
-$APP_TITLE = 'AE-FileShare';
+require_once __DIR__ . '/lib/env.php';
 
-$ROOT_DIR = __DIR__ . '/files';
-$DATA_DIR = __DIR__ . '/data';
+$ENV = loadEnvFile(__DIR__ . '/.env');
 
-define('FILES_PER_PAGE', 30);
-define('PRIVATE_MODE', true);
-define('MAX_UPLOAD_BYTES', 1024 * 1024 * 1024);
-define('DEFAULT_SHARE_TTL_HOURS', 24);
+define('APP_VERSION', trim((string)@file_get_contents(__DIR__ . '/VERSION')) ?: '0.1.0');
+
+$APP_TITLE = (string)envValue($ENV, 'APP_TITLE', 'AE-FileShare');
+
+$ROOT_DIR = envPath($ENV, 'ROOT_DIR', 'files', __DIR__);
+$DATA_DIR = envPath($ENV, 'DATA_DIR', 'data', __DIR__);
+
+define('FILES_PER_PAGE', envInt($ENV, 'FILES_PER_PAGE', 30));
+define('PRIVATE_MODE', envBool($ENV, 'PRIVATE_MODE', true));
+define('MAX_UPLOAD_BYTES', envInt($ENV, 'MAX_UPLOAD_BYTES', 1024 * 1024 * 1024));
+define('DEFAULT_SHARE_TTL_HOURS', envInt($ENV, 'DEFAULT_SHARE_TTL_HOURS', 24));
 
 // Default development access:
 // admin / admin123
