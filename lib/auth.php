@@ -72,6 +72,22 @@ function canDo(string $permission): bool
     return in_array($permission, $user['permissions'] ?? [], true);
 }
 
+function isAdmin(): bool
+{
+    $user = currentUser();
+    return ($user['role'] ?? '') === 'admin';
+}
+
+function requireAdmin(): void
+{
+    requireAuth();
+    if (!isAdmin()) {
+        http_response_code(403);
+        echo 'Solo admin puede hacer esta accion';
+        exit;
+    }
+}
+
 function requirePermission(string $permission): void
 {
     requireAuth();
