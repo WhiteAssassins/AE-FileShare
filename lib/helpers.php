@@ -40,6 +40,43 @@ function resolvePath(string $root, string $relative): string
     return $candidateReal;
 }
 
+function cleanRelativePath(string $relative): string
+{
+    $relative = str_replace('\\', '/', trim($relative));
+    $parts = [];
+
+    foreach (explode('/', $relative) as $part) {
+        $part = trim($part);
+        if ($part === '' || $part === '.') continue;
+        if ($part === '..') continue;
+        $parts[] = $part;
+    }
+
+    return implode('/', $parts);
+}
+
+function buildPathInRoot(string $root, string $relative): ?string
+{
+    $rootReal = realpath($root);
+    if ($rootReal === false) return null;
+
+    $relative = cleanRelativePath($relative);
+    $path = $rootReal . ($relative === '' ? '' : DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative));
+    $parent = dirname($path);
+    $parentReal = realpath($parent);
+
+    if ($parentReal === false) return null;
+
+    $rootPrefix = rtrim($rootReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    $parentPrefix = rtrim($parentReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+    if ($parentReal !== $rootReal && strpos($parentPrefix, $rootPrefix) !== 0) {
+        return null;
+    }
+
+    return $path;
+}
+
 function relativeFromRoot(string $root, string $path): string
 {
     $rootReal = realpath($root) ?: $root;
@@ -64,11 +101,42 @@ function getUserAgent(): string
 
 function safeDownloadFilename(string $filename): string
 {
-    return str_replace(["\r", "\n", '"', '\\'], '_', $filename);
+    $filename = str_replace(["\r", "\n", '"', '\\', '/', "\0"], '_', $filename);
+    return trim($filename) !== '' ? $filename : 'download';
+}
+
+function safeStorageName(string $name): string
+{
+    $name = basename(str_replace('\\', '/', $name));
+    $name = preg_replace('/[^\w.\- ]+/u', '_', $name) ?? '';
+    $name = trim($name, " .\t\n\r\0\x0B");
+    return $name !== '' ? $name : 'archivo';
+}
+
+function fileExtension(string $filename): string
+{
+    return strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+}
+
+function isBlockedExtension(string $filename, array $blockedExtensions): bool
+{
+    return in_array(fileExtension($filename), $blockedExtensions, true);
 }
 
 function isPreviewable(string $path): bool
 {
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'mp4', 'webm', 'mp3', 'wav', 'ogg', 'pdf'], true);
+}
+
+function flash(string $type, string $message): void
+{
+    $_SESSION['flash'][] = ['type' => $type, 'message' => $message];
+}
+
+function takeFlash(): array
+{
+    $messages = $_SESSION['flash'] ?? [];
+    unset($_SESSION['flash']);
+    return $messages;
 }
