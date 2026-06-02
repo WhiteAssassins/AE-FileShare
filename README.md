@@ -1,6 +1,10 @@
 # AE-FileShare
 
-Mini file hub en PHP para compartir archivos desde una carpeta del servidor, con login opcional, subidas, descargas visuales con progreso, links temporales y panel admin.
+![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-v0.1.0-blue)
+
+Mini centro de archivos en PHP para compartir archivos desde una carpeta del servidor, con acceso opcional, subidas, descargas visuales con progreso, enlaces temporales y panel de administracion.
 
 ## Requisitos
 
@@ -22,7 +26,7 @@ Mini file hub en PHP para compartir archivos desde una carpeta del servidor, con
 admin / admin123
 ```
 
-7. En el panel superior de admin, cambia la clave de `admin`.
+7. En el panel superior de administracion, cambia la clave de `admin`.
 8. Si vas a usar invitados, cambia tambien la clave de `guest`.
 9. Sube archivos a `files/` o desde la interfaz web.
 10. Cuando todo este listo, decide si quieres dejarlo privado o abierto.
@@ -78,7 +82,7 @@ Si existe `data/settings.json`, sus valores de usuarios y modo privado tienen pr
 
 - Pon archivos dentro de `files/` o subelos desde la interfaz.
 - Usa las casillas para seleccionar varios elementos y descargarlos como ZIP.
-- Usa `Link` para crear enlaces temporales con clave opcional.
+- Usa `Compartir` para crear enlaces temporales con clave opcional.
 - Las subidas y descargas muestran progreso, velocidad y tamano transferido.
 
 ## Seguridad
