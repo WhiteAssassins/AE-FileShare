@@ -1,10 +1,10 @@
-# Changelog
+# Registro de cambios
 
 ## v0.1.0 - 2026-06-02
 
-- Initial public-ready release.
-- Added private and open modes.
-- Added admin settings from the web.
-- Added upload and download progress UI.
-- Added temporary share links with optional passwords.
-- Added folder creation, rename, delete, multi-download ZIP, audit logs, and CSRF protection.
+- Primera version preparada para publicarse.
+- Modos privado y abierto.
+- Configuracion de administracion desde la web.
+- Interfaz de progreso para subidas y descargas.
+- Enlaces temporales con clave opcional.
+- Creacion de carpetas, renombrado, borrado, descarga ZIP multiple, auditoria y proteccion CSRF.
