@@ -125,7 +125,7 @@ if ($previewRel !== '') {
     }
 }
 
-// Info friki
+// Detalles tecnicos
 $infoFile = null;
 $infoMeta = null;
 if ($infoRel !== '') {
