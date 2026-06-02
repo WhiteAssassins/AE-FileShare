@@ -3,11 +3,16 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/security.php';
 require_once __DIR__ . '/lib/auth.php';
+require_once __DIR__ . '/lib/settings.php';
 require_once __DIR__ . '/lib/stats.php';
 require_once __DIR__ . '/lib/shares.php';
 
 startSecureSession();
 sendSecurityHeaders();
+
+$settings = readSettings($DATA_DIR, $USERS);
+$USERS = $settings['users'];
+$privateMode = isPrivateModeEnabled($settings);
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $target = $_GET['t'] ?? $_POST['t'] ?? '';
@@ -21,6 +26,12 @@ function redirectToDir(string $dir = ''): void
 function redirectHome(): void
 {
     header('Location: index.php');
+    exit;
+}
+
+function redirectLogin(): void
+{
+    header('Location: login.php');
     exit;
 }
 
@@ -124,7 +135,7 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     flash('error', 'Usuario o clave incorrectos');
-    redirectHome();
+    redirectLogin();
 }
 
 if ($action === 'sharedownload') {
@@ -155,8 +166,10 @@ if ($action === 'sharedownload') {
     streamFile($abs, 'download');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !($action === 'multizip' && !$privateMode)) {
     requireAuth();
+    requireCsrf();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCsrf();
 }
 
@@ -164,6 +177,29 @@ if ($action === 'logout' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     logAudit($DATA_DIR, 'logout');
     logoutUser();
     redirectHome();
+}
+
+if ($action === 'settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAdmin();
+    $dir = cleanRelativePath($_POST['d'] ?? '');
+    $settings['private_mode'] = isset($_POST['private_mode']);
+
+    foreach (['admin', 'guest'] as $username) {
+        $password = trim((string)($_POST[$username . '_password'] ?? ''));
+        if ($password !== '') {
+            if (!isset($settings['users'][$username])) {
+                $settings['users'][$username] = [
+                    'role' => $username === 'admin' ? 'admin' : 'guest',
+                    'permissions' => $username === 'admin' ? ['upload', 'mkdir', 'rename', 'delete', 'share'] : ['upload'],
+                ];
+            }
+            $settings['users'][$username]['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+    }
+
+    writeSettings($DATA_DIR, $settings);
+    logAudit($DATA_DIR, 'settings', '', ['private_mode' => $settings['private_mode']]);
+    actionDone($dir, 'success', 'Configuracion guardada');
 }
 
 if ($action === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -283,7 +319,7 @@ if ($action === 'share' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($action === 'multizip' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    requireAuth();
+    if ($privateMode) requireAuth();
     $dir = cleanRelativePath($_POST['d'] ?? '');
     $items = $_POST['items'] ?? [];
 
@@ -313,7 +349,7 @@ if ($action === 'multizip' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($action === 'download' || $action === 'preview') {
-    requireAuth();
+    if ($privateMode) requireAuth();
     $abs = resolvePath($ROOT_DIR, $target);
     if (!is_file($abs)) {
         http_response_code(404);
@@ -339,7 +375,7 @@ if ($action === 'download' || $action === 'preview') {
 }
 
 if ($action === 'zipdir') {
-    requireAuth();
+    if ($privateMode) requireAuth();
     $absDir = resolvePath($ROOT_DIR, $target);
     if (!is_dir($absDir) || !class_exists('ZipArchive')) {
         http_response_code(404);
