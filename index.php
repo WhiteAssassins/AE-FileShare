@@ -179,7 +179,7 @@ if ($infoRel !== '') {
             </h1>
    
         </div>
-        <div class="hidden sm:flex items-center gap-3">
+        <div class="flex flex-wrap items-center justify-end gap-3">
             <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-100">
                 <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Servidor en linea</span>
